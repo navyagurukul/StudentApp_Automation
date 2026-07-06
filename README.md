@@ -67,7 +67,7 @@ These tests drive a **real device**, so GitHub's cloud runners can't run them.
 Two supported ways to run daily and report to Slack:
 
 - **Self-hosted runner** (`.github/workflows/daily-tests.yml`) — register a
-  self-hosted runner (label `student-pixel`) on the Windows box with the Pixel
+  self-hosted runner on the Windows box with the Pixel
   attached, add repo secret `SLACK_WEBHOOK_URL`. Runs 07:00 IST daily + on demand.
 - **Windows Task Scheduler** (`scripts/run_daily.ps1`) — no runner needed; runs
   the same suite locally and posts to Slack:

@@ -1,7 +1,6 @@
-# 2.3.1 works with the bundled free relay; 2.3.2 needs AltTester Desktop
-# (its newer handshake isn't spoken by the minimal relay). Pin 2.3.1 for the
-# license-free path:  pip install AltTester-Driver==2.3.1
-AltTester-Driver>=2.3.1,<2.4
+# Pinned to 2.3.1 for the bundled free relay (2.3.2's newer handshake isn't
+# spoken by the minimal relay). If you use AltTester Desktop instead, 2.3.2 is fine.
+AltTester-Driver==2.3.1
 pytest~=8.3.0
 pytest-html~=4.1.0
 Appium-Python-Client~=4.2.0
