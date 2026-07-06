@@ -53,6 +53,12 @@ jobs:
           adb reverse tcp:13000 tcp:13000
           # clear app data so the suite starts at a clean login screen (login tests need it)
           adb shell pm clear $pkg
+          # Pre-grant runtime permissions so no Android system dialog blocks the
+          # flow: "allow notifications" (shown before entering the number on a
+          # fresh launch) and mic (for speech questions). AltTester can't tap
+          # system dialogs, so we grant them up front.
+          adb shell pm grant $pkg android.permission.POST_NOTIFICATIONS
+          adb shell pm grant $pkg android.permission.RECORD_AUDIO
           adb shell monkey -p $pkg -c android.intent.category.LAUNCHER 1
           python scripts/check_server.py
           # A fresh-cleared app takes 1-2 min to boot + connect to the relay; wait
