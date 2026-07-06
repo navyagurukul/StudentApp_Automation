@@ -54,8 +54,17 @@ jobs:
           # clear app data so the suite starts at a clean login screen (login tests need it)
           adb shell pm clear $pkg
           adb shell monkey -p $pkg -c android.intent.category.LAUNCHER 1
-          Start-Sleep -Seconds 8
           python scripts/check_server.py
+          # A fresh-cleared app takes 1-2 min to boot + connect to the relay; wait
+          # until AltDriver can actually reach it before running the suite, so the
+          # first tests don't error with a connection timeout.
+          $ok = $false
+          for ($i = 0; $i -lt 20; $i++) {
+            python -c "from alttester import AltDriver; a=AltDriver(host='127.0.0.1',port=13000,app_name='__default__',timeout=8); print('scene:', a.get_current_scene()); a.stop()"
+            if ($LASTEXITCODE -eq 0) { $ok = $true; break }
+            Start-Sleep -Seconds 8
+          }
+          if (-not $ok) { Write-Host "WARNING: app did not connect to the relay within ~2.5 min" }
 
       - name: Run UI suite (tests self-report to Slack)
         run: pytest -v -ra --html=reports/report.html --self-contained-html

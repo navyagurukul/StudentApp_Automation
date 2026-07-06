@@ -97,6 +97,12 @@ _HINT_RETRY_PATH  = _HINT_ROOT_PATH + "/RetryButton"
 _SPEECH_QUESTION_ROOT = "//MCQCanvasNew/SpeechQuestion_UIC(Clone)"
 _SPEECH_SKIP_PATH     = _SPEECH_QUESTION_ROOT + "/Skip/Text (TMP)"
 
+# Speech, guided-speech, and text-to-speech questions need real voice input and
+# CANNOT be automated — per QA rule we click Skip to move to the next question.
+# Every such prefab exposes a "Skip/Text (TMP)" child directly under the quiz
+# canvas, so match ANY of them generically (no need for each exact prefab name).
+_GENERIC_SKIP_GLOB = "//MCQCanvasNew/*/Skip/Text (TMP)"
+
 # Jumble-up sentence builder — tap every JumbleWordBtn in order, then OK.
 # Note the casing: this prefab uses "OkButton", not "OKBtn" like the MCQs.
 #
@@ -158,28 +164,30 @@ class QuizPage:
         """
         summary = {"answered": 0, "correct": 0, "wrong": 0, "skipped": 0}
         for q in range(max_questions):
-            kind, variant = self._wait_for_any_question(timeout=question_load_timeout)
+            kind, payload = self._wait_for_any_question(timeout=question_load_timeout)
             if kind is None:
                 logger.info("Quiz UI gone after %d questions — quiz finished.", q)
                 break
 
-            if kind == "speech":
-                outcome = self._skip_speech_question()
+            if kind == "skip":
+                # speech / guided-speech / text-to-speech — can't be automated
+                logger.info("Question %d is a speech/guided-speech/text-to-speech "
+                            "question (not automatable) — clicking Skip.", q + 1)
+                self._click_or_invoke(payload, label="question_skip")
                 summary["answered"] += 1
                 summary["skipped"] += 1
-                logger.info("Question %d (speech) outcome: %s.", q + 1, outcome)
             elif kind == "jumble":
                 outcome = self._handle_jumble_question()
                 summary["answered"] += 1
                 summary["skipped"] += 1
                 logger.info("Question %d (jumble) outcome: %s.", q + 1, outcome)
             else:
-                outcome = self.answer_current_question(variant, is_trophy=is_trophy)
+                outcome = self.answer_current_question(payload, is_trophy=is_trophy)
                 summary["answered"] += 1
                 summary[outcome] = summary.get(outcome, 0) + 1
                 logger.info(
                     "Question %d (%s%s) outcome: %s.",
-                    q + 1, variant.label, " trophy" if is_trophy else "", outcome,
+                    q + 1, payload.label, " trophy" if is_trophy else "", outcome,
                 )
 
             # Brief pause between questions for the next one to load.
@@ -287,16 +295,18 @@ class QuizPage:
     def _wait_for_any_question(self, timeout: int):
         """
         Poll for any kind of question to appear on the quiz canvas.
-        Returns (kind, variant):
-          ("speech", None) if a SpeechQuestion prefab is active
-          ("jumble", None) if a JumbleUp prefab is active
-          ("mcq",    variant) if a MCQ variant is active with options
-          (None, None) on timeout
+        Returns (kind, payload):
+          ("skip",   skip_button) if a speech / guided-speech / text-to-speech
+                                  question is active (not automatable — Skip it)
+          ("jumble", None)        if a JumbleUp prefab is active
+          ("mcq",    variant)     if a MCQ variant is active with options
+          (None, None)            on timeout
         """
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
-            if self._speech_question_visible():
-                return ("speech", None)
+            skip_btn = self._find_skip_button()
+            if skip_btn is not None:
+                return ("skip", skip_btn)
             if self._jumble_question_visible():
                 return ("jumble", None)
             variant = self._active_variant()
@@ -304,6 +314,23 @@ class QuizPage:
                 return ("mcq", variant)
             time.sleep(0.5)
         return (None, None)
+
+    def _find_skip_button(self):
+        """Return the Skip button of any unautomatable question (speech,
+        guided-speech, text-to-speech), or None. All such prefabs expose a
+        'Skip/Text (TMP)' child directly under the quiz canvas, so one glob
+        catches every variant."""
+        try:
+            objs = self.driver.find_objects(By.PATH, _GENERIC_SKIP_GLOB)
+        except Exception:
+            return None
+        for o in objs:
+            try:
+                if o.enabled:
+                    return o
+            except Exception:
+                continue
+        return None
 
     def _speech_question_visible(self) -> bool:
         try:
