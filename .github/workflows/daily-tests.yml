@@ -1,20 +1,25 @@
-name: Daily Tests -> Slack
+name: Full App Automation -> Slack
 
-# Runs the real AltTester UI suite once a day and reports to Slack.
+# Runs the ENTIRE AltTester UI suite (login, registration, regression, stories,
+# wordfun) on push to main, once a day, and on demand — and reports to Slack.
+# This is the full automation, not a sanity check (that's ci.yml).
 #
 # IMPORTANT: these tests drive a real device, so this job needs a **self-hosted
 # runner** registered on the Windows machine that has the Pixel attached, the
 # instrumented app installed, and either AltTester Desktop OR the bundled relay
-# (tools/altserver_relay.py) available. GitHub's cloud runners cannot run it.
+# (tools/altserver_relay.py) available. GitHub's cloud runners cannot run it
+# (no device; and the app is arm64 IL2CPP so a cloud emulator can't run it).
 #
 # Set up once: Repo -> Settings -> Actions -> Runners -> New self-hosted runner
 # (Windows), label it `student-pixel`. Add repo secret SLACK_WEBHOOK_URL (the
 # framework's SlackReporter posts results there).
 #
 # Prefer no CI runner? Use scripts/run_daily.ps1 with Windows Task Scheduler
-# instead (see README) — same tests, same Slack report, no runner needed.
+# instead (see README) — same full suite, same Slack report, no runner needed.
 
 on:
+  push:
+    branches: [main]
   schedule:
     - cron: "30 1 * * *" # 07:00 IST (01:30 UTC) daily
   workflow_dispatch:
