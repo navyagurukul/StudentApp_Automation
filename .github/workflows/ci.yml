@@ -1,0 +1,27 @@
+name: CI
+
+# Device-free sanity gate on every push / PR. The real UI tests need a physical
+# device + AltTester server, so they run on the scheduled self-hosted job
+# (daily-tests.yml) — here we just prove the framework imports and collects.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Byte-compile all sources
+        run: python -m compileall -q framework pages tests scripts conftest.py tools
+      - name: Collect tests (imports + markers, no device)
+        run: pytest --collect-only -q

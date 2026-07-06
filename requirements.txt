@@ -1,0 +1,5 @@
+AltTester-Driver~=2.3.2
+pytest~=8.3.0
+pytest-html~=4.1.0
+Appium-Python-Client~=4.2.0
+websockets>=12

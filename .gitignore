@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Test artifacts / logs
+reports/
+logs/
+*.log
+screenshots/
+
+# C# build output
+csharp/obj/
+csharp/bin/
+
+# Local env
+.env
