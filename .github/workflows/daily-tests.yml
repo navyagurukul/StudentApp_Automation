@@ -27,6 +27,11 @@ on:
 jobs:
   ui-tests:
     runs-on: [self-hosted, windows]
+    # The runner has no pwsh (Actions' default shell on Windows); use built-in
+    # Windows PowerShell for every run: step.
+    defaults:
+      run:
+        shell: powershell
     env:
       ALT_HOST: "127.0.0.1"
       ALT_PORT: "13000"
@@ -41,7 +46,6 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Start AltServer relay (license-free) + adb reverse + fresh app launch
-        shell: pwsh
         run: |
           $pkg = "com.OritSciencesPrivateLimited.EnglishGurukul.student"
           Start-Process python -ArgumentList "-u","tools/altserver_relay.py","--host","127.0.0.1","--port","13000"
